@@ -1,8 +1,8 @@
 package com.pedido.application.port.in;
 
+import com.pedido.domain.model.Pedido;
 import com.pedido.dto.PedidoDto;
-import com.pedido.dto.PedidoResponseDto;
 
 public interface PedidoUseCase {
-    PedidoResponseDto processarPedido(PedidoDto pedidoDTO);
+    Pedido processarPedido(PedidoDto pedidoDTO);
 }

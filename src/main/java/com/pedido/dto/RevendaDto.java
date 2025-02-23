@@ -3,9 +3,12 @@ package com.pedido.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class RevendaDto {
     @NotBlank(message = "CNPJ é obrigatório")
     private String cnpj;

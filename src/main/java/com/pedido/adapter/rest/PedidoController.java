@@ -1,6 +1,7 @@
 package com.pedido.adapter.rest;
 
 import com.pedido.application.port.in.PedidoUseCase;
+import com.pedido.domain.model.Pedido;
 import com.pedido.dto.PedidoDto;
 import com.pedido.dto.PedidoResponseDto;
 import jakarta.validation.Valid;
@@ -18,8 +19,8 @@ public class PedidoController {
     }
 
     @PostMapping
-    public ResponseEntity<PedidoResponseDto> processarPedido(@Valid @RequestBody PedidoDto pedidoDTO) {
-        PedidoResponseDto resposta = pedidoUseCase.processarPedido(pedidoDTO);
-        return ResponseEntity.ok(resposta);
+    public ResponseEntity<Pedido> processarPedido(@Valid @RequestBody PedidoDto pedidoDTO) {
+        Pedido pedido = pedidoUseCase.processarPedido(pedidoDTO);
+        return ResponseEntity.ok(pedido);
     }
 }

@@ -2,36 +2,28 @@ package com.pedido.application.service;
 
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.pedido.application.port.in.PedidoUseCase;
+import com.pedido.application.port.out.EnviarPedidoApi;
 import com.pedido.application.port.out.PedidoPersistencePort;
 import com.pedido.domain.model.Pedido;
 import com.pedido.dto.PedidoDto;
-import com.pedido.dto.PedidoResponseDto;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 public class PedidoServiceImpl implements PedidoUseCase {
 
     private final PedidoPersistencePort pedidoPersistencePort;
-    private final RestTemplate restTemplate;
+    private final EnviarPedidoApi enviarPedidoApi;
 
-    @Value("${pedido.api.url}")
-    private String pedidoApiUrl;
-
-    public PedidoServiceImpl(PedidoPersistencePort pedidoPersistencePort) {
+    public PedidoServiceImpl(PedidoPersistencePort pedidoPersistencePort, EnviarPedidoApi enviarPedidoApi) {
         this.pedidoPersistencePort = pedidoPersistencePort;
-        this.restTemplate = new RestTemplate();
+        this.enviarPedidoApi = enviarPedidoApi;
     }
 
     @Override
-    public PedidoResponseDto processarPedido(PedidoDto pedidoDto) {
+    public Pedido processarPedido(PedidoDto pedidoDto) {
         List<Pedido.Item> itens = pedidoDto.getProdutos().stream()
                 .map(dto -> new Pedido.Item(dto.getProduto(), dto.getQuantidade()))
                 .collect(Collectors.toList());
@@ -41,38 +33,16 @@ public class PedidoServiceImpl implements PedidoUseCase {
             throw new IllegalArgumentException("Pedido inválido para envio. Total mínimo de 1000 unidades não atingido.");
         }
 
-        PedidoResponseDto resposta = enviarPedido(pedidoDto);
-
-        // Persistir o pedido (mesmo em caso de fallback, para reprocessamento futuro)
-        pedidoPersistencePort.save(pedido);
-
-        return resposta;
-    }
-
-    //Implementada a chamada externa para a API nesta classe por falta de tempo para extrair para outra classe.
-    private PedidoResponseDto enviarPedido(PedidoDto pedidoDto) {
-        // Chamada externa para a API
-        PedidoResponseDto resposta;
         try {
-            HttpEntity<PedidoDto> request = new HttpEntity<>(pedidoDto);
-            resposta = restTemplate.exchange(pedidoApiUrl,
-                    HttpMethod.POST,
-                    request,
-                    PedidoResponseDto.class).getBody();
-
-            if (resposta == null) {
-                resposta = realizarFallback(pedidoDto);
-            }
-        } catch (Exception ex) {
-            resposta = realizarFallback(pedidoDto);
+            enviarPedidoApi.enviarPedido(pedidoDto);
+            pedido.confirmar();
+        } catch (Exception e) {
+            //TODO: Implementar fallback
+        } finally {
+            // Persistir o pedido (mesmo em caso de fallback, para reprocessamento futuro)
+            pedidoPersistencePort.save(pedido);
         }
-        return resposta;
-    }
 
-    private PedidoResponseDto realizarFallback(PedidoDto pedidoDto) {
-        PedidoResponseDto fallback = new PedidoResponseDto();
-        fallback.setPedidoId(UUID.randomUUID().toString());
-        fallback.setItens(pedidoDto.getProdutos());
-        return fallback;
+        return pedido;
     }
 }

@@ -12,6 +12,7 @@ public class Pedido {
     private String clienteId;
     private List<Item> itens;
     private String pedidoExternoId;
+    private Boolean confirmado = false;
 
     public Pedido(Long id, String clienteId, List<Item> itens) {
         this.id = id;
@@ -25,6 +26,14 @@ public class Pedido {
 
     public int totalUnidades() {
         return itens.stream().mapToInt(Item::getQuantidade).sum();
+    }
+
+    public void confirmar() {
+        this.confirmado = true;
+    }
+
+    public Boolean isConfirmado() {
+        return this.confirmado;
     }
 
     @Setter
